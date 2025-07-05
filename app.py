@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, send_file
 from docx import Document
-from docx2pdf import convert
 import os
 
 app = Flask(__name__)
@@ -16,8 +15,8 @@ def replace_text_preserve_format(paragraph, replacements):
             if paragraph.runs:
                 paragraph.runs[0].text = full_text
 
-# Replace placeholders in docx and convert to PDF
-def replace_placeholders(input_file, output_file, replacements):
+# Replace placeholders in docx and convert to PDF using LibreOffice
+def replace_placeholders(input_file, output_file, pdf_file, replacements):
     doc = Document(input_file)
 
     for para in doc.paragraphs:
@@ -31,9 +30,9 @@ def replace_placeholders(input_file, output_file, replacements):
 
     doc.save(output_file)
 
-    # Convert to PDF
-    convert(output_file)
-    print(f"Converted {output_file} to PDF.")
+    # Convert to PDF using LibreOffice
+    os.system(f'libreoffice --headless --convert-to pdf "{output_file}" --outdir "{os.getcwd()}"')
+    print(f"Converted {output_file} to PDF at {pdf_file}.")
 
 @app.route("/", methods=["GET", "POST"])
 def choose_type():
@@ -64,7 +63,7 @@ def generate_cover():
     if not os.path.exists(input_file):
         return "Error: CoverPage.docx not found!", 400
 
-    replace_placeholders(input_file, output_file, replacements)
+    replace_placeholders(input_file, output_file, pdf_file, replacements)
 
     return send_file(pdf_file, as_attachment=True)
 
@@ -87,7 +86,7 @@ def generate_lab():
     if not os.path.exists(input_file):
         return "Error: Lab_Report.docx not found!", 400
 
-    replace_placeholders(input_file, output_file, replacements)
+    replace_placeholders(input_file, output_file, pdf_file, replacements)
 
     return send_file(pdf_file, as_attachment=True)
 
